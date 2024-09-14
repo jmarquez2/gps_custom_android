@@ -26,8 +26,6 @@ class MapsFragment : Fragment() {
 
     private val viewModel : CoordinatesViewModel by viewModel()
 
-    var latitude = 0.0
-    var longitude = 0.0
 
     private val callback = OnMapReadyCallback { googleMap ->
         /**
@@ -60,8 +58,8 @@ class MapsFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED){
                 viewModel.coordinatesState.collect{
-                    latitude = it.latitude
-                    longitude = it.longitude
+                    val latitude = it.latitude
+                    val longitude = it.longitude
 
                     mapFragment?.getMapAsync { googleMap ->
                         googleMap.clear()
