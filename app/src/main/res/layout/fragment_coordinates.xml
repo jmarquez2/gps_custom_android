@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+    <data>
+        <variable
+            name="coordinates"
+            type="com.jrms.gpsviewer.data.Coordinates" />
+
+    </data>
+    <androidx.constraintlayout.widget.ConstraintLayout
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        tools:context=".fragments.CoordinatesFragment"
+        >
+
+
+        <RelativeLayout
+            android:id="@+id/coordinates_data"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:padding="20dp"
+
+            >
+
+            <TextView
+                android:textStyle="bold"
+                android:id="@+id/latitudeLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/latitude"
+                android:layout_marginEnd="10dp"/>
+
+            <TextView
+                android:layout_below="@id/latitudeLabel"
+                android:textStyle="bold"
+                android:id="@+id/longitudeLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/longitude"
+                android:layout_marginEnd="10dp"/>
+
+            <TextView
+                android:textStyle="bold"
+                android:layout_below="@id/longitudeLabel"
+                android:id="@+id/timeLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/lastUpdate"
+                android:layout_marginEnd="10dp"/>
+
+
+
+            <TextView
+                android:id="@+id/latitudeValue"
+
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@{coordinates.latitudeText}"
+                tools:text='0.20'
+                android:layout_toEndOf="@id/latitudeLabel"
+                />
+
+            <TextView
+                android:id="@+id/longitudeValue"
+                android:layout_below="@id/latitudeLabel"
+                android:layout_toEndOf="@id/longitudeLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@{coordinates.longitudeText}"
+                tools:text='0.540'
+                />
+
+            <TextView
+                android:id="@+id/timeValue"
+                android:layout_below="@id/longitudeValue"
+                android:layout_toEndOf="@id/timeLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@{coordinates.date}"
+                tools:text='01/01/1999'
+                />
+
+        </RelativeLayout>
+
+        <androidx.fragment.app.FragmentContainerView
+
+            app:layout_constraintTop_toBottomOf="@id/coordinates_data"
+            android:id="@+id/fragment_container_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            />
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>
