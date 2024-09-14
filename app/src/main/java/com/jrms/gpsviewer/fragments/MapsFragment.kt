@@ -17,30 +17,20 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.jrms.gpsviewer.R
+import com.jrms.gpsviewer.data.latitudePreference
+import com.jrms.gpsviewer.data.longitudePreference
+import com.jrms.gpsviewer.dataStore
 import com.jrms.gpsviewer.viewmodels.CoordinatesViewModel
 import kotlinx.coroutines.launch
+import org.koin.androidx.viewmodel.ext.android.activityViewModel
+import org.koin.androidx.viewmodel.ext.android.getActivityViewModel
 
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MapsFragment : Fragment() {
 
-    private val viewModel : CoordinatesViewModel by viewModel()
+    private val viewModel: CoordinatesViewModel by activityViewModel()
 
-
-    private val callback = OnMapReadyCallback { googleMap ->
-        /**
-         * Manipulates the map once available.
-         * This callback is triggered when the map is ready to be used.
-         * This is where we can add markers or lines, add listeners or move the camera.
-         * In this case, we just add a marker near Sydney, Australia.
-         * If Google Play services is not installed on the device, the user will be prompted to
-         * install it inside the SupportMapFragment. This method will only be triggered once the
-         * user has installed Google Play services and returned to the app.
-         */
-        val sydney = LatLng(-34.0, 151.0)
-        googleMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-        googleMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -56,23 +46,24 @@ class MapsFragment : Fragment() {
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
 
         viewLifecycleOwner.lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED){
-                viewModel.coordinatesState.collect{
-                    val latitude = it.latitude
-                    val longitude = it.longitude
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                activity?.baseContext?.dataStore?.data?.collect {
+                    val latitude = it[latitudePreference] ?: 0.0
+                    val longitude = it[longitudePreference] ?: 0.0
 
                     mapFragment?.getMapAsync { googleMap ->
                         googleMap.clear()
                         val currentLocation = LatLng(latitude, longitude)
-                        googleMap.addMarker(MarkerOptions().position(currentLocation).title("Current location"))
+                        googleMap.addMarker(
+                            MarkerOptions().position(currentLocation).title("Current location")
+                        )
                         googleMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation))
-                        googleMap.animateCamera( CameraUpdateFactory.zoomTo( 17.0f ) );
-                }
+                        googleMap.animateCamera(CameraUpdateFactory.zoomTo(17.0f));
+                    }
 
                 }
             }
         }
 
-        mapFragment?.getMapAsync(callback)
     }
 }

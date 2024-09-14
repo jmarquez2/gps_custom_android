@@ -2,6 +2,8 @@ package com.jrms.gpsviewer.viewmodels
 
 import android.content.Context
 import android.util.Log
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jrms.gpsviewer.BuildConfig
@@ -19,12 +21,20 @@ import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.logging.SimpleFormatter
+import androidx.datastore.preferences.preferencesDataStore
 
-class CoordinatesViewModel(context : Context) : ViewModel(){
+
+
+class CoordinatesViewModel() : ViewModel(){
+
+
 
     private val formatter = SimpleDateFormat.getDateTimeInstance()
-    private val _coordinatesState = MutableStateFlow(Coordinates(0.0,0.0, formatter.format(Date())))
+    private val _coordinatesState = MutableStateFlow<Coordinates?>(null)
+
     val coordinatesState  = _coordinatesState.asStateFlow()
+
+
 
 
     private val getMessage = Emitter.Listener {
@@ -33,15 +43,18 @@ class CoordinatesViewModel(context : Context) : ViewModel(){
 
     private var ioSocket: Socket? = null
 
+    private var connecting : Boolean = false
+
 
 
     init{
-
         connectSocket()
     }
 
     private fun connectSocket(){
         try {
+
+            connecting = true;
 
             ioSocket = IO.socket(BuildConfig.API_URL)
 
@@ -54,6 +67,8 @@ class CoordinatesViewModel(context : Context) : ViewModel(){
 
         }catch (e : Exception){
             Log.e("IO sockets exception", e.toString())
+        }finally {
+            connecting = false;
         }
     }
 
@@ -67,17 +82,24 @@ class CoordinatesViewModel(context : Context) : ViewModel(){
 
             val latitude : Double; val longitude : Double
 
+
             try{
                 latitude = serializedData.getDouble("latitude")
                 longitude = serializedData.getDouble("longitude")
 
                 _coordinatesState.update {
-                    it.copy(
+                    val coordinates : Coordinates = it?.copy(
                         latitude = latitude,
                         longitude = longitude,
                         date = formatter.format(Date())
 
                     )
+                        ?: Coordinates(latitude = latitude,
+                            longitude = longitude,
+                            date = formatter.format(Date()))
+
+                    coordinates
+
                 }
 
             }catch (e : Exception){
@@ -89,7 +111,7 @@ class CoordinatesViewModel(context : Context) : ViewModel(){
     }
 
     fun reconnectSocket() {
-        if(ioSocket == null || (ioSocket?.connected() == false)){
+        if((ioSocket == null || (ioSocket?.connected() == false)) && !connecting){
             connectSocket()
         }
     }

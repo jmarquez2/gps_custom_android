@@ -82,6 +82,7 @@ dependencies {
     implementation(libs.insert.koin.koin.core)
     implementation(libs.insert.koin.koin.android)
     implementation(libs.koin.core.viewmodel)
+    implementation(libs.androidx.datastore.preferences)
 
 
     implementation(libs.androidx.fragment.fragment.ktx)
