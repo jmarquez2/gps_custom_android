@@ -55,6 +55,10 @@ class MainActivity : AppCompatActivity() {
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
 
+        if(savedInstanceState !== null){
+            viewModel.reconnectSocket()
+        }
+
 
 
         this.lifecycleScope.launch {
@@ -79,4 +83,6 @@ class MainActivity : AppCompatActivity() {
         super.onRestart()
         viewModel.reconnectSocket()
     }
+
+
 }

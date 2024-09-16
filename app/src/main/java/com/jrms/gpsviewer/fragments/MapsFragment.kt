@@ -17,6 +17,7 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.jrms.gpsviewer.R
+import com.jrms.gpsviewer.data.followDeviceMarkerPreference
 import com.jrms.gpsviewer.data.latitudePreference
 import com.jrms.gpsviewer.data.longitudePreference
 import com.jrms.gpsviewer.dataStore
@@ -32,6 +33,7 @@ class MapsFragment : Fragment() {
     private val viewModel: CoordinatesViewModel by activityViewModel()
 
 
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -45,11 +47,15 @@ class MapsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
 
+
+        var starting = savedInstanceState == null;
+
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 activity?.baseContext?.dataStore?.data?.collect {
                     val latitude = it[latitudePreference] ?: 0.0
                     val longitude = it[longitudePreference] ?: 0.0
+                    val followMarker = it[followDeviceMarkerPreference] ?: true
 
                     mapFragment?.getMapAsync { googleMap ->
                         googleMap.clear()
@@ -57,8 +63,14 @@ class MapsFragment : Fragment() {
                         googleMap.addMarker(
                             MarkerOptions().position(currentLocation).title("Current location")
                         )
-                        googleMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation))
-                        googleMap.animateCamera(CameraUpdateFactory.zoomTo(17.0f));
+
+                        if(followMarker || starting){
+                            googleMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation))
+                            googleMap.animateCamera(CameraUpdateFactory.zoomTo(17.0f))
+
+                            starting = false
+                        }
+
                     }
 
                 }

@@ -81,7 +81,17 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@{coordinates.date}"
-                tools:text='01/01/1999'
+                tools:text='01/01/2024 00:00:00'
+                />
+
+            <CheckBox
+                android:id="@+id/followDeviceCheckBox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/followDevice"
+                android:layout_below="@id/timeValue"
+                android:onClick="onCheckedFollow"
+
                 />
 
         </RelativeLayout>
