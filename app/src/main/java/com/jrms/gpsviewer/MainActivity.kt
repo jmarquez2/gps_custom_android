@@ -37,6 +37,10 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        if(savedInstanceState != null){
+            viewModel.reconnectSocket()
+        }
+
         binding = MainActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
