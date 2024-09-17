@@ -116,5 +116,11 @@ class CoordinatesViewModel() : ViewModel(){
         }
     }
 
+    fun disconnectSocket() {
+        ioSocket?.close()
+        ioSocket?.disconnect()
+
+    }
+
 
 }
