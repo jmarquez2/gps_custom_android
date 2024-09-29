@@ -1,7 +1,7 @@
 package com.jrms.gpsviewer.fragments
 
 import android.os.Bundle
-import android.util.Log
+
 
 import android.view.LayoutInflater
 import android.view.View
@@ -20,6 +20,7 @@ import com.jrms.gpsviewer.data.followDeviceMarkerPreference
 import com.jrms.gpsviewer.data.lastUpdatePreference
 import com.jrms.gpsviewer.data.latitudePreference
 import com.jrms.gpsviewer.data.longitudePreference
+import com.jrms.gpsviewer.data.selectedDevice
 import com.jrms.gpsviewer.dataStore
 
 import com.jrms.gpsviewer.databinding.FragmentCoordinatesBinding
@@ -29,7 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.androidx.viewmodel.ext.android.activityViewModel
-import org.koin.androidx.viewmodel.ext.android.viewModel
+
 
 
 /**
@@ -54,6 +55,8 @@ class CoordinatesFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED){
                 activity?.baseContext?.dataStore?.data?.collect{
+
+                    viewModel.deviceId = it[selectedDevice] ?: ""
 
                     binding.followDeviceCheckBox.isChecked = it[followDeviceMarkerPreference] ?: true
 

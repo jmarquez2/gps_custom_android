@@ -1,13 +1,19 @@
+import org.jetbrains.kotlin.konan.properties.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.google.android.libraries.mapsplatform.secrets.gradle.plugin)
+    kotlin("kapt")
+
 }
+
 
 android {
     namespace = "com.jrms.gpsviewer"
     compileSdk = 34
 
+    dataBinding.enable = true
 
     defaultConfig {
         applicationId = "com.jrms.gpsviewer"
@@ -22,6 +28,9 @@ android {
         }
     }
 
+    val p = Properties()
+    p.load(project.rootProject.file("local.properties").reader())
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -29,11 +38,14 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            buildConfigField("String", "API_URL", "\"http://ec2-18-219-165-101.us-east-2.compute.amazonaws.com:443\"")
+
+            buildConfigField("String", "API_URL", p.getProperty("API_URL"))
+            buildConfigField("String", "ID", p.getProperty("ID")) // TODO change this to log in to obtain an user id
         }
 
         debug{
-            buildConfigField("String", "API_URL", "\"http://ec2-18-219-165-101.us-east-2.compute.amazonaws.com:443\"")
+            buildConfigField("String", "API_URL", p.getProperty("API_URL"))
+            buildConfigField("String", "ID", p.getProperty("ID")) /// TODO change this to log in to obtain an user id
         }
     }
     compileOptions {
@@ -45,7 +57,7 @@ android {
     }
     buildFeatures {
         compose = true
-        dataBinding = true
+
         buildConfig = true
         viewBinding = true
     }
@@ -83,6 +95,8 @@ dependencies {
     implementation(libs.insert.koin.koin.android)
     implementation(libs.koin.core.viewmodel)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
 
 
     implementation(libs.androidx.fragment.fragment.ktx)

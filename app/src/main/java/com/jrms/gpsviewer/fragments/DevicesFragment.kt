@@ -1,60 +1,154 @@
 package com.jrms.gpsviewer.fragments
 
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.ripple.rememberRipple
+import androidx.compose.material3.Card
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.datastore.preferences.core.edit
+import androidx.lifecycle.lifecycleScope
+import com.jrms.gpsviewer.BuildConfig
 import com.jrms.gpsviewer.R
+import com.jrms.gpsviewer.data.selectedDevice
+import com.jrms.gpsviewer.dataStore
+import com.jrms.gpsviewer.models.Device
+import com.jrms.gpsviewer.services.api.ApiService
+import com.jrms.gpsviewer.viewmodels.CoordinatesViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.koin.android.ext.android.inject
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Use the [DevicesFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class DevicesFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
+
+    private val apiService : ApiService by inject()
+    private val devices = mutableStateListOf<Device>()
+    private val viewModel : CoordinatesViewModel by viewModel()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_devices, container, false)
+    ): View {
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            withContext(Dispatchers.IO){
+                val res = apiService.getDevices(BuildConfig.ID)
+                if(res.body() != null){
+                    devices.clear()
+                    devices.addAll(res.body() as Array<Device>)
+                }
+
+            }
+        }
+
+
+        return ComposeView(requireContext()).apply {
+            setContent {
+                DeviceList(devices)
+            }
+        }
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment DevicesFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            DevicesFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
+
+
+
+
+
+    @Composable
+    fun DeviceList(devices : MutableList<Device>){
+
+
+        Surface (modifier = Modifier.fillMaxSize()){
+            Column(modifier = Modifier.padding(all = 10.dp)) {
+                Text(fontWeight = FontWeight.Bold, text = stringResource(R.string.deviceList))
+
+                Row (modifier = Modifier.padding(top = 20.dp)) {
+                    LazyColumn {
+
+
+
+                        items(devices) { d ->
+                            Card (modifier = Modifier.fillMaxSize().
+                                then(Modifier.clickable(
+                                    interactionSource = remember { MutableInteractionSource()},
+                                    indication = rememberRipple(bounded = false),
+                                    onClick = { selectDevice(d)}))
+                                ) {
+                                Row {
+                                    Text(text = "${stringResource(R.string.id)}: ", modifier = Modifier.padding(10.dp, 10.dp, 5.dp, 0.dp), fontWeight = FontWeight.Bold)
+                                    Text(d.id, modifier = Modifier.padding(top = 10.dp))
+                                }
+
+                                Row{
+                                    Text(text = "${stringResource(R.string.description)}: ", modifier = Modifier.padding(10.dp, 10.dp, 5.dp, 10.dp), fontWeight = FontWeight.Bold)
+                                    Text(d.description ?: "N/A", modifier = Modifier.padding(top = 10.dp))
+                                }
+
+                            }
+
+
+                        }
+                    }
                 }
+
             }
+
+
+
+        }
     }
+
+    private fun selectDevice(d : Device){
+        viewLifecycleOwner.lifecycleScope.launch {
+            activity?.baseContext?.dataStore?.edit {
+                it[selectedDevice] = d.id
+            }
+
+            viewModel.deviceId = d.id
+
+            Toast.makeText(activity,
+                "${getString(R.string.selectedDeviceConfirm)}: ${d.description ?: d.id}",
+                Toast.LENGTH_SHORT).show()
+
+        }
+
+    }
+
+    @Preview
+    @Composable
+    fun ShowDeviceList(){
+
+        devices.add(Device("123123", "1231243", "test"))
+        DeviceList(devices)
+    }
+
+
 }

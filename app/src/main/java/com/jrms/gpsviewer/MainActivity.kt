@@ -17,13 +17,13 @@ import androidx.navigation.ui.setupWithNavController
 import com.jrms.gpsviewer.data.lastUpdatePreference
 import com.jrms.gpsviewer.data.latitudePreference
 import com.jrms.gpsviewer.data.longitudePreference
+import com.jrms.gpsviewer.data.selectedDevice
 import com.jrms.gpsviewer.databinding.MainActivityBinding
 import com.jrms.gpsviewer.viewmodels.CoordinatesViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.map
+
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.koin.androidx.scope.activityScope
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 
@@ -60,6 +60,7 @@ class MainActivity : AppCompatActivity() {
         navView.setupWithNavController(navController)
 
 
+        startOrResumeSocket()
 
         this.lifecycleScope.launch {
             withContext(Dispatchers.IO){
@@ -72,6 +73,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                 }
+
             }
         }
 
@@ -79,14 +81,29 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    private fun startOrResumeSocket(){
+        this.lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+
+                baseContext?.dataStore?.data?.collect {
+                    this@MainActivity.viewModel.deviceId = it[selectedDevice] ?: ""
+                    this@MainActivity.viewModel.reconnectSocket()
+                }
+
+            }
+        }
+
+
+    }
+
     override fun onRestart() {
         super.onRestart()
-        viewModel.reconnectSocket()
+        startOrResumeSocket()
     }
 
     override fun onStop() {
         super.onStop()
-        viewModel.disconnectSocket()
+        startOrResumeSocket()
     }
 
 

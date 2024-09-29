@@ -11,8 +11,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 
 import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
@@ -24,13 +22,8 @@ import com.jrms.gpsviewer.dataStore
 import com.jrms.gpsviewer.viewmodels.CoordinatesViewModel
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.activityViewModel
-import org.koin.androidx.viewmodel.ext.android.getActivityViewModel
-
-import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MapsFragment : Fragment() {
-
-    private val viewModel: CoordinatesViewModel by activityViewModel()
 
 
 
@@ -61,7 +54,7 @@ class MapsFragment : Fragment() {
                         googleMap.clear()
                         val currentLocation = LatLng(latitude, longitude)
                         googleMap.addMarker(
-                            MarkerOptions().position(currentLocation).title("Current location")
+                            MarkerOptions().position(currentLocation).title(getString(R.string.deviceLastLocation))
                         )
 
                         if(followMarker || starting){

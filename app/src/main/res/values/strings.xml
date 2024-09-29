@@ -12,4 +12,9 @@
     <string name="title_dashboard">Dashboard</string>
     <string name="title_notifications">Notifications</string>
     <string name="followDevice">Follow device</string>
+    <string name="deviceList">Device list</string>
+    <string name="id">ID</string>
+    <string name="description">Description</string>
+    <string name="selectedDeviceConfirm">Tracking new device</string>
+    <string name="deviceLastLocation">Device last location</string>
 </resources>

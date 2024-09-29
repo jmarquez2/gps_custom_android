@@ -20,9 +20,8 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.logging.SimpleFormatter
-import androidx.datastore.preferences.preferencesDataStore
-
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 
 class CoordinatesViewModel() : ViewModel(){
@@ -34,6 +33,7 @@ class CoordinatesViewModel() : ViewModel(){
 
     val coordinatesState  = _coordinatesState.asStateFlow()
 
+    var deviceId : String = ""
 
 
 
@@ -47,18 +47,21 @@ class CoordinatesViewModel() : ViewModel(){
 
 
 
-    init{
-        connectSocket()
-    }
-
     private fun connectSocket(){
+
+        viewModelScope.launch {
+            withContext(Dispatchers.IO){
+
+            }
+        }
+
         try {
 
             connecting = true;
 
             ioSocket = IO.socket(BuildConfig.API_URL)
 
-            ioSocket?.on("updated coordinates", getMessage)
+            ioSocket?.on(deviceId, getMessage)
 
             ioSocket?.connect()
 
