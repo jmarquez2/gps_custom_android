@@ -103,7 +103,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
-        startOrResumeSocket()
+        viewModel.disconnectSocket()
     }
 
 

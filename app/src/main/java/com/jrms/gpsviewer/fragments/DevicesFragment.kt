@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Card
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,6 +39,7 @@ import com.jrms.gpsviewer.data.selectedDevice
 import com.jrms.gpsviewer.dataStore
 import com.jrms.gpsviewer.models.Device
 import com.jrms.gpsviewer.services.api.ApiService
+import com.jrms.gpsviewer.ui.AppTheme
 import com.jrms.gpsviewer.viewmodels.CoordinatesViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -85,45 +87,48 @@ class DevicesFragment : Fragment() {
     @Composable
     fun DeviceList(devices : MutableList<Device>){
 
+        AppTheme {
+            Surface (modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background){
+                Column(modifier = Modifier.padding(all = 10.dp)) {
+                    Text(fontWeight = FontWeight.Bold, text = stringResource(R.string.deviceList))
 
-        Surface (modifier = Modifier.fillMaxSize()){
-            Column(modifier = Modifier.padding(all = 10.dp)) {
-                Text(fontWeight = FontWeight.Bold, text = stringResource(R.string.deviceList))
-
-                Row (modifier = Modifier.padding(top = 20.dp)) {
-                    LazyColumn {
+                    Row (modifier = Modifier.padding(top = 20.dp)) {
+                        LazyColumn {
 
 
 
-                        items(devices) { d ->
-                            Card (modifier = Modifier.fillMaxSize().
+                            items(devices) { d ->
+                                Card (modifier = Modifier.fillMaxSize().
                                 then(Modifier.clickable(
                                     interactionSource = remember { MutableInteractionSource()},
                                     indication = rememberRipple(bounded = false),
                                     onClick = { selectDevice(d)}))
                                 ) {
-                                Row {
-                                    Text(text = "${stringResource(R.string.id)}: ", modifier = Modifier.padding(10.dp, 10.dp, 5.dp, 0.dp), fontWeight = FontWeight.Bold)
-                                    Text(d.id, modifier = Modifier.padding(top = 10.dp))
+                                    Row {
+                                        Text(text = "${stringResource(R.string.id)}: ", modifier = Modifier.padding(10.dp, 10.dp, 5.dp, 0.dp), fontWeight = FontWeight.Bold)
+                                        Text(d.id, modifier = Modifier.padding(top = 10.dp))
+                                    }
+
+                                    Row{
+                                        Text(text = "${stringResource(R.string.description)}: ", modifier = Modifier.padding(10.dp, 10.dp, 5.dp, 10.dp), fontWeight = FontWeight.Bold)
+                                        Text(d.description ?: "N/A", modifier = Modifier.padding(top = 10.dp))
+                                    }
+
                                 }
 
-                                Row{
-                                    Text(text = "${stringResource(R.string.description)}: ", modifier = Modifier.padding(10.dp, 10.dp, 5.dp, 10.dp), fontWeight = FontWeight.Bold)
-                                    Text(d.description ?: "N/A", modifier = Modifier.padding(top = 10.dp))
-                                }
 
                             }
-
-
                         }
                     }
+
                 }
 
+
+
             }
-
-
-
         }
+
+
     }
 
     private fun selectDevice(d : Device){
