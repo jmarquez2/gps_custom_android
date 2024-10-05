@@ -1,19 +1,14 @@
 package com.jrms.gpsviewer.viewmodels
 
-import android.content.Context
 import android.util.Log
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jrms.gpsviewer.BuildConfig
-import com.jrms.gpsviewer.R
 import com.jrms.gpsviewer.data.Coordinates
 import io.socket.client.IO
 import io.socket.client.Socket
 import io.socket.emitter.Emitter
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -28,12 +23,14 @@ class CoordinatesViewModel() : ViewModel(){
 
 
 
+    var coordinates : Coordinates? = null
+
     private val formatter = SimpleDateFormat.getDateTimeInstance()
-    private val _coordinatesState = MutableStateFlow<Coordinates?>(null)
+    private val _coordinatesState = MutableStateFlow<Coordinates?>(coordinates)
 
     val coordinatesState  = _coordinatesState.asStateFlow()
 
-    var deviceId : String = ""
+    var deviceId : String? = null
 
 
 
@@ -90,20 +87,7 @@ class CoordinatesViewModel() : ViewModel(){
                 latitude = serializedData.getDouble("latitude")
                 longitude = serializedData.getDouble("longitude")
 
-                _coordinatesState.update {
-                    val coordinates : Coordinates = it?.copy(
-                        latitude = latitude,
-                        longitude = longitude,
-                        date = formatter.format(Date())
-
-                    )
-                        ?: Coordinates(latitude = latitude,
-                            longitude = longitude,
-                            date = formatter.format(Date()))
-
-                    coordinates
-
-                }
+                updateCoordinates(latitude, longitude)
 
             }catch (e : Exception){
                 Log.e("Error serializing JSON", e.toString())
@@ -113,7 +97,24 @@ class CoordinatesViewModel() : ViewModel(){
         }
     }
 
-    fun reconnectSocket() {
+    fun updateCoordinates( latitude : Double, longitude : Double){
+        _coordinatesState.update {
+            this.coordinates = it?.copy(
+                latitude = latitude,
+                longitude = longitude,
+                date = formatter.format(Date())
+
+            )
+                ?: Coordinates(latitude = latitude,
+                    longitude = longitude,
+                    date = formatter.format(Date()))
+
+            coordinates
+
+        }
+    }
+
+    fun startSocket() {
         if((ioSocket == null || (ioSocket?.connected() == false)) && !connecting){
             connectSocket()
         }

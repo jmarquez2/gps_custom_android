@@ -55,23 +55,16 @@ class CoordinatesFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED){
                 activity?.baseContext?.dataStore?.data?.collect{
-
-                    viewModel.deviceId = it[selectedDevice] ?: ""
-
                     binding.followDeviceCheckBox.isChecked = it[followDeviceMarkerPreference] ?: true
-
-                    val dataReceived = Coordinates(
-                        latitude = it[latitudePreference] ?: 0.0,
-                        longitude =  it[longitudePreference] ?: 0.0,
-                        date = it[lastUpdatePreference] ?: "",
-
-                    )
-                    binding.coordinates = dataReceived
                 }
             }
         }
 
-        childFragmentManager.beginTransaction().setReorderingAllowed(true).add(R.id.fragment_container_view, MapsFragment::class.java, null).commit()
+
+
+
+        childFragmentManager.beginTransaction().setReorderingAllowed(true)
+            .add(R.id.fragment_container_view, MapsFragment::class.java, null).commit()
 
 
         binding.followDeviceCheckBox.setOnClickListener { c ->
@@ -82,8 +75,16 @@ class CoordinatesFragment : Fragment() {
                     }
                 }
             }
+        }
 
-
+        viewLifecycleOwner.lifecycleScope.launch {
+            withContext(Dispatchers.Default){
+                this@CoordinatesFragment.viewModel.coordinatesState.collect{
+                    if(it != null){
+                        binding.coordinates = it
+                    }
+                }
+            }
         }
 
         return binding.root
