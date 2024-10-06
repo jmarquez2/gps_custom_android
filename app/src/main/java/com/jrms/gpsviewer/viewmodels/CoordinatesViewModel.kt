@@ -17,6 +17,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
 
 class CoordinatesViewModel() : ViewModel(){
@@ -25,8 +26,8 @@ class CoordinatesViewModel() : ViewModel(){
 
     var coordinates : Coordinates? = null
 
-    private val formatter = SimpleDateFormat.getDateTimeInstance()
-    private val _coordinatesState = MutableStateFlow<Coordinates?>(coordinates)
+    private val formatter = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
+    private val _coordinatesState = MutableStateFlow(coordinates)
 
     val coordinatesState  = _coordinatesState.asStateFlow()
 
@@ -97,17 +98,20 @@ class CoordinatesViewModel() : ViewModel(){
         }
     }
 
-    fun updateCoordinates( latitude : Double, longitude : Double){
+    fun updateCoordinates( latitude : Double, longitude : Double, lastUpdate : String? = null){
+
+        val date = lastUpdate ?: formatter.format(Date())
+
         _coordinatesState.update {
             this.coordinates = it?.copy(
                 latitude = latitude,
                 longitude = longitude,
-                date = formatter.format(Date())
+                date = date
 
             )
                 ?: Coordinates(latitude = latitude,
                     longitude = longitude,
-                    date = formatter.format(Date()))
+                    date = date)
 
             coordinates
 

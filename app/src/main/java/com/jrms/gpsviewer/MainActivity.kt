@@ -76,8 +76,9 @@ class MainActivity : AppCompatActivity(), OnSocketAction {
                 baseContext?.dataStore?.data?.collect{
                     val latitude = it[latitudePreference]
                     val longitude = it[longitudePreference]
-                    if(viewModel.coordinates == null && latitude != null && longitude != null){
-                        viewModel.updateCoordinates( latitude, longitude)
+                    val lastUpdate = it[lastUpdatePreference]
+                    if(viewModel.coordinates == null && latitude != null && longitude != null && lastUpdate != null){
+                        viewModel.updateCoordinates( latitude, longitude, lastUpdate)
                     }
                     val previousID = viewModel.deviceId;
                     viewModel.deviceId = it[selectedDevice]
