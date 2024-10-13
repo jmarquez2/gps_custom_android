@@ -35,16 +35,13 @@ import com.jrms.gpsviewer.BuildConfig
 import com.jrms.gpsviewer.R
 import com.jrms.gpsviewer.data.selectedDevice
 import com.jrms.gpsviewer.dataStore
-import com.jrms.gpsviewer.interfaces.OnSocketAction
 import com.jrms.gpsviewer.models.Device
 import com.jrms.gpsviewer.services.api.ApiService
 import com.jrms.gpsviewer.ui.AppTheme
-import com.jrms.gpsviewer.viewmodels.CoordinatesViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
-import org.koin.androidx.viewmodel.ext.android.viewModel
 
 
 class DevicesFragment : Fragment() {
@@ -52,7 +49,6 @@ class DevicesFragment : Fragment() {
 
     private val apiService : ApiService by inject()
     private val devices = mutableStateListOf<Device>()
-    private val viewModel : CoordinatesViewModel by viewModel()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -105,7 +101,7 @@ class DevicesFragment : Fragment() {
 
 
                             items(devices) { d ->
-                                Card (modifier = Modifier.fillMaxSize().
+                                Card (modifier = Modifier.fillMaxSize().padding(0.dp, 5.dp)
                                 then(Modifier.clickable(
                                     interactionSource = remember { MutableInteractionSource()},
                                     indication = rememberRipple(bounded = false),
@@ -158,6 +154,7 @@ class DevicesFragment : Fragment() {
     fun ShowDeviceList(){
 
         devices.add(Device("123123", "1231243", "test"))
+        devices.add(Device("123123", "1231243", "test2"))
         DeviceList(devices)
     }
 
