@@ -88,7 +88,7 @@ class MainActivity : AppCompatActivity(), OnSocketAction {
     }
 
     override fun onStop() {
-        viewModel.disconnectSocket(true)
+        viewModel.disconnectSocket()
         super.onStop()
 
     }
