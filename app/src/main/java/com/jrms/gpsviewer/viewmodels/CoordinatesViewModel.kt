@@ -5,6 +5,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jrms.gpsviewer.BuildConfig
 import com.jrms.gpsviewer.data.Coordinates
+import com.jrms.gpsviewer.data.DATE_FORMAT
+import com.jrms.gpsviewer.data.selectedDevice
+import com.jrms.gpsviewer.dataStore
+import com.jrms.gpsviewer.database.DatabaseService
+import com.jrms.gpsviewer.models.Location
+import com.jrms.gpsviewer.utils.formatDate
+import com.jrms.gpsviewer.utils.parseDate
 import io.socket.client.IO
 import io.socket.client.Socket
 import io.socket.emitter.Emitter
@@ -18,21 +25,22 @@ import java.util.Date
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Locale
+import java.util.UUID
 
 
-class CoordinatesViewModel() : ViewModel(){
+class CoordinatesViewModel(private val databaseService: DatabaseService) : ViewModel() {
 
 
+    private var coordinates: Coordinates? = null
 
-    var coordinates : Coordinates? = null
 
-    private val formatter = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
     private val _coordinatesState = MutableStateFlow(coordinates)
 
-    val coordinatesState  = _coordinatesState.asStateFlow()
+    private val mainDispatcher = Dispatchers.IO
 
-    var deviceId : String? = null
+    val coordinatesState = _coordinatesState.asStateFlow()
 
+    private var deviceId: String? = null
 
 
     private val getMessage = Emitter.Listener {
@@ -41,56 +49,54 @@ class CoordinatesViewModel() : ViewModel(){
 
     private var ioSocket: Socket? = null
 
-    private var connecting : Boolean = false
+    private var connecting: Boolean = false
 
 
+    private fun connectSocket() {
 
-    private fun connectSocket(){
 
         viewModelScope.launch {
-            withContext(Dispatchers.IO){
+            withContext(mainDispatcher) {
+                try {
 
+                    connecting = true;
+
+                    ioSocket = IO.socket(BuildConfig.API_URL)
+
+                    ioSocket?.on(deviceId, getMessage)
+
+                    ioSocket?.connect()
+
+                    ioSocket?.emit("add_room_devices")
+
+
+                } catch (e: Exception) {
+                    Log.e("IO sockets exception", e.toString())
+                } finally {
+                    connecting = false;
+                }
             }
         }
 
-        try {
 
-            connecting = true;
-
-            ioSocket = IO.socket(BuildConfig.API_URL)
-
-            ioSocket?.on(deviceId, getMessage)
-
-            ioSocket?.connect()
-
-            ioSocket?.emit("add_room_devices")
-
-
-        }catch (e : Exception){
-            Log.e("IO sockets exception", e.toString())
-        }finally {
-            connecting = false;
-        }
     }
-
-
-
 
 
     private fun receiveMessage(data: Array<Any>?) {
         viewModelScope.launch {
-            val serializedData =  data?.get(0) as JSONObject
+            val serializedData = data?.get(0) as JSONObject
 
-            val latitude : Double; val longitude : Double
+            val latitude: Double;
+            val longitude: Double
 
 
-            try{
+            try {
                 latitude = serializedData.getDouble("latitude")
                 longitude = serializedData.getDouble("longitude")
 
                 updateCoordinates(latitude, longitude)
 
-            }catch (e : Exception){
+            } catch (e: Exception) {
                 Log.e("Error serializing JSON", e.toString())
 
             }
@@ -98,20 +104,23 @@ class CoordinatesViewModel() : ViewModel(){
         }
     }
 
-    fun updateCoordinates( latitude : Double, longitude : Double, lastUpdate : String? = null){
+    private fun updateCoordinates(latitude: Double, longitude: Double, lastUpdate: String? = null) {
 
-        val date = lastUpdate ?: formatter.format(Date())
+        val date = Date()
+        val dateString = lastUpdate ?: formatDate(date, Locale.getDefault())
 
         _coordinatesState.update {
             this.coordinates = it?.copy(
                 latitude = latitude,
                 longitude = longitude,
-                date = date
+                date = dateString
 
             )
-                ?: Coordinates(latitude = latitude,
+                ?: Coordinates(
+                    latitude = latitude,
                     longitude = longitude,
-                    date = date)
+                    date = dateString
+                )
 
             coordinates
 
@@ -119,17 +128,69 @@ class CoordinatesViewModel() : ViewModel(){
     }
 
     fun startSocket() {
-        if((ioSocket == null || (ioSocket?.connected() == false)) && !connecting){
+        if ((ioSocket == null || (ioSocket?.connected() == false)) && !connecting) {
             connectSocket()
         }
     }
 
+    fun setCoordinatesAndConnect(previousID: String?) {
+        viewModelScope.launch {
+            withContext(mainDispatcher) {
 
-    fun disconnectSocket() {
-        ioSocket?.close()
-        ioSocket?.disconnect()
-        ioSocket = null
+                val location = getLastLocation(previousID)
 
+
+                val date = if(location?.timestamp != null){
+
+                formatDate(
+                    Date(location.timestamp), Locale.getDefault()
+                )}else{
+                    ""
+                }
+
+                updateCoordinates(
+                    location?.latitude ?: 0.0, location?.longitude ?: 0.0, date
+                )
+
+
+                if (previousID != deviceId) {
+                    deviceId = previousID
+                    disconnectSocket()
+                    startSocket()
+                }
+            }
+        }
+    }
+
+
+    fun disconnectSocket(saveLastToDb: Boolean = false) {
+        viewModelScope.launch {
+            withContext(mainDispatcher) {
+                ioSocket?.close()
+                ioSocket?.disconnect()
+                ioSocket = null
+
+                if (saveLastToDb) {
+
+                    if (coordinates != null) {
+                        val timestamp = parseDate(coordinates!!.date, Locale.getDefault())!!.time
+                        val location = Location(
+                            UUID.randomUUID().toString(),
+                            coordinates!!.latitude, coordinates!!.longitude, timestamp, deviceId!!
+                        )
+                        databaseService.addLocation(location)
+                        Log.i("LOCATION", "Location saved $location")
+                    }
+
+                }
+            }
+        }
+
+    }
+
+
+    private suspend fun getLastLocation(id : String?): Location? {
+        return this.databaseService.getLastLocation(id);
     }
 
 

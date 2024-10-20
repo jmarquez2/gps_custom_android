@@ -4,7 +4,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.google.android.libraries.mapsplatform.secrets.gradle.plugin)
-    kotlin("kapt")
+    alias(libs.plugins.google.devtools.ks)
+
+
 
 }
 
@@ -87,7 +89,7 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
 
 
-    implementation("io.socket:socket.io-client:2.0.0") {
+    implementation(libs.iosocket.client) {
         exclude("org.json",  "json")
     }
 
@@ -97,6 +99,15 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
+
+    implementation(libs.androidx.room.runtime)
+    annotationProcessor(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
+
+
+    // To use Kotlin Symbol Processing (KSP)
+    ksp(libs.androidx.room.compiler)
+
 
 
     implementation(libs.androidx.fragment.fragment.ktx)

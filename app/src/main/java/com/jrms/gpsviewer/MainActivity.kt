@@ -1,39 +1,38 @@
 package com.jrms.gpsviewer
 
 import android.os.Bundle
+import android.util.Log
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.datastore.preferences.core.edit
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
-import com.jrms.gpsviewer.data.lastUpdatePreference
-import com.jrms.gpsviewer.data.latitudePreference
-import com.jrms.gpsviewer.data.longitudePreference
 import com.jrms.gpsviewer.data.selectedDevice
 import com.jrms.gpsviewer.databinding.MainActivityBinding
 import com.jrms.gpsviewer.interfaces.OnSocketAction
+
 import com.jrms.gpsviewer.viewmodels.CoordinatesViewModel
-import kotlinx.coroutines.Dispatchers
+
 
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.koin.androidx.viewmodel.ext.android.viewModel
 
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 
 class MainActivity : AppCompatActivity(), OnSocketAction {
 
     private lateinit var binding: MainActivityBinding
 
-    private val viewModel : CoordinatesViewModel by viewModel()
+    private val viewModel: CoordinatesViewModel by viewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if(savedInstanceState != null){
+        if (savedInstanceState != null) {
             startSocket()
         }
 
@@ -56,46 +55,22 @@ class MainActivity : AppCompatActivity(), OnSocketAction {
         navView.setupWithNavController(navController)
 
 
-        this.lifecycleScope.launch {
-            withContext(Dispatchers.IO){
-                this@MainActivity.viewModel.coordinatesState.collect{ data ->
-                    this@MainActivity.baseContext.dataStore.edit {
-                        if(data != null) {
-                            it[lastUpdatePreference] = data.date
-                            it[latitudePreference] = data.latitude
-                            it[longitudePreference] = data.longitude
-                        }
-                    }
-
-                }
-            }
-        }
 
         this.lifecycleScope.launch {
-            withContext(Dispatchers.Default){
-                baseContext?.dataStore?.data?.collect{
-                    val latitude = it[latitudePreference]
-                    val longitude = it[longitudePreference]
-                    val lastUpdate = it[lastUpdatePreference]
-                    if(viewModel.coordinates == null && latitude != null && longitude != null && lastUpdate != null){
-                        viewModel.updateCoordinates( latitude, longitude, lastUpdate)
-                    }
-                    val previousID = viewModel.deviceId;
-                    viewModel.deviceId = it[selectedDevice]
-                    if(previousID != viewModel.deviceId){
-                        restartSocket()
-                    }
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                baseContext?.dataStore?.data?.collect {
+                    viewModel.setCoordinatesAndConnect(it[selectedDevice])
                 }
             }
+
         }
+
+
     }
 
-    override fun startSocket(){
-        this.lifecycleScope.launch {
-            withContext(Dispatchers.IO) {
-                this@MainActivity.viewModel.startSocket()
-            }
-        }
+    override fun startSocket() {
+        viewModel.startSocket()
+
     }
 
     override fun stopSocket() {
@@ -113,7 +88,7 @@ class MainActivity : AppCompatActivity(), OnSocketAction {
     }
 
     override fun onStop() {
-        viewModel.disconnectSocket()
+        viewModel.disconnectSocket(true)
         super.onStop()
 
     }

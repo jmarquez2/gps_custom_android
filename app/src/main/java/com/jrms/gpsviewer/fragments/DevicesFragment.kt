@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.stringResource
@@ -30,48 +31,53 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.edit
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import com.jrms.gpsviewer.BuildConfig
+import androidx.lifecycle.repeatOnLifecycle
 import com.jrms.gpsviewer.R
 import com.jrms.gpsviewer.data.selectedDevice
 import com.jrms.gpsviewer.dataStore
 import com.jrms.gpsviewer.models.Device
-import com.jrms.gpsviewer.services.api.ApiService
 import com.jrms.gpsviewer.ui.AppTheme
-import kotlinx.coroutines.Dispatchers
+import com.jrms.gpsviewer.viewmodels.DeviceViewModel
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.koin.android.ext.android.inject
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 
 class DevicesFragment : Fragment() {
 
 
-    private val apiService : ApiService by inject()
-    private val devices = mutableStateListOf<Device>()
+    private val viewModel : DeviceViewModel by viewModel()
+
+    private var devices = mutableStateListOf<Device>()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
 
+        viewModel.loadDevices()
+
+
         viewLifecycleOwner.lifecycleScope.launch {
-
-                try {
-                    withContext(Dispatchers.IO) {
-                        val res = apiService.getDevices(BuildConfig.ID)
-                        if (res.body() != null) {
-                            devices.clear()
-                            devices.addAll(res.body() as Array<Device>)
-                        }
-                    }
-                }catch (e : Exception){
-                    Log.e("Network error", e.toString())
-                    Toast.makeText(activity, R.string.errorGetDevices, Toast.LENGTH_SHORT).show()
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                viewModel.devices.collect {
+                    devices.clear()
+                    devices.addAll(it)
                 }
+            }
+        }
 
-
-
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                viewModel.error.collect {
+                    if (activity != null && it) {
+                        Toast.makeText(activity, R.string.errorGetDevices, Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                }
+            }
         }
 
 
@@ -104,7 +110,7 @@ class DevicesFragment : Fragment() {
                                 Card (modifier = Modifier.fillMaxSize().padding(0.dp, 5.dp)
                                 then(Modifier.clickable(
                                     interactionSource = remember { MutableInteractionSource()},
-                                    indication = rememberRipple(bounded = false),
+                                    indication = rememberRipple(bounded = true),
                                     onClick = { selectDevice(d)}))
                                 ) {
                                     Row {
@@ -136,15 +142,21 @@ class DevicesFragment : Fragment() {
 
     private fun selectDevice(d : Device){
         viewLifecycleOwner.lifecycleScope.launch {
-            activity?.baseContext?.dataStore?.edit {
-                it[selectedDevice] = d.id
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                activity?.baseContext?.dataStore?.edit {
+                    it[selectedDevice] = d.id
+                }
+
+
+                if(activity != null) {
+                    Toast.makeText(
+                        activity,
+                        "${getString(R.string.selectedDeviceConfirm)}: ${d.description ?: d.id}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+
             }
-
-
-            Toast.makeText(activity,
-                "${getString(R.string.selectedDeviceConfirm)}: ${d.description ?: d.id}",
-                Toast.LENGTH_SHORT).show()
-
         }
 
     }
@@ -153,9 +165,15 @@ class DevicesFragment : Fragment() {
     @Composable
     fun ShowDeviceList(){
 
-        devices.add(Device("123123", "1231243", "test"))
-        devices.add(Device("123123", "1231243", "test2"))
-        DeviceList(devices)
+        val list = remember {
+            mutableStateListOf<Device>()
+        }
+
+
+
+        list.add(Device("123123", "1231243", "test"))
+        list.add(Device("123123", "1231243", "test2"))
+        DeviceList(list)
     }
 
 

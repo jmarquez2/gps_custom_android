@@ -15,12 +15,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.jrms.gpsviewer.R
-import com.jrms.gpsviewer.data.Coordinates
 import com.jrms.gpsviewer.data.followDeviceMarkerPreference
-import com.jrms.gpsviewer.data.lastUpdatePreference
-import com.jrms.gpsviewer.data.latitudePreference
-import com.jrms.gpsviewer.data.longitudePreference
-import com.jrms.gpsviewer.data.selectedDevice
 import com.jrms.gpsviewer.dataStore
 
 import com.jrms.gpsviewer.databinding.FragmentCoordinatesBinding
@@ -69,7 +64,7 @@ class CoordinatesFragment : Fragment() {
 
         binding.followDeviceCheckBox.setOnClickListener { c ->
             viewLifecycleOwner.lifecycleScope.launch {
-                withContext(Dispatchers.Default){
+                repeatOnLifecycle(Lifecycle.State.RESUMED) {
                     activity?.baseContext?.dataStore?.edit {
                         it[followDeviceMarkerPreference] = (c as CheckBox).isChecked
                     }
@@ -78,7 +73,7 @@ class CoordinatesFragment : Fragment() {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            withContext(Dispatchers.Default){
+            repeatOnLifecycle(Lifecycle.State.RESUMED){
                 this@CoordinatesFragment.viewModel.coordinatesState.collect{
                     if(it != null){
                         binding.coordinates = it

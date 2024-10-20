@@ -5,8 +5,10 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
+import com.jrms.gpsviewer.database.DatabaseService
 import com.jrms.gpsviewer.services.api.ApiService
 import com.jrms.gpsviewer.viewmodels.CoordinatesViewModel
+import com.jrms.gpsviewer.viewmodels.DeviceViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.GlobalContext.startKoin
 import org.koin.core.module.dsl.viewModel
@@ -26,8 +28,12 @@ class MainApplication : Application() {
 
             modules(
                 module {
-                    viewModel { CoordinatesViewModel() }
+                    single { DatabaseService(get())}
+                    viewModel { CoordinatesViewModel(get()) }
+                    viewModel { DeviceViewModel(get()) }
                     single { ApiService() }
+
+
                 }
             )
 
