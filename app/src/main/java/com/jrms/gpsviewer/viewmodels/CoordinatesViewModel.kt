@@ -55,25 +55,24 @@ class CoordinatesViewModel(private val databaseService: DatabaseService) : ViewM
         viewModelScope.launch {
             withContext(mainDispatcher) {
 
-                val location = getLastLocation(previousID)
+                if(previousID != deviceId) {
+                    val location = getLastLocation(previousID)
 
 
-                if(location != null){
-                    updateCoordinates(
-                        location.latitude, location.longitude,  formatDate(
-                            Date(location.timestamp), Locale.getDefault()
+                    if (location != null) {
+                        updateCoordinates(
+                            location.latitude, location.longitude, formatDate(
+                                Date(location.timestamp), Locale.getDefault()
+                            )
                         )
-                    )
-                }
+                    }
 
+                    lastLocation = location
 
-                lastLocation = location
-
-
-                if (previousID != deviceId) {
                     deviceId = previousID
                     disconnectSocket()
                     startSocket()
+
                 }
             }
         }
