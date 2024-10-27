@@ -70,37 +70,34 @@ class CoordinatesViewModel(private val databaseService: DatabaseService) : ViewM
                     lastLocation = location
 
                     deviceId = previousID
-                    disconnectSocket()
-                    startSocket()
+                    socketIODisconnect()
+                    socketIOConnect()
 
                 }
             }
         }
     }
 
-    private fun connectSocket() {
+    private suspend fun socketIOConnect() {
+
+        withContext(mainDispatcher) {
+            try {
+
+                connecting = true;
+
+                ioSocket = IO.socket(BuildConfig.API_URL)
+
+                ioSocket?.on(deviceId, getMessage)
+
+                ioSocket?.connect()
+
+                ioSocket?.emit("add_room_devices")
 
 
-        viewModelScope.launch {
-            withContext(mainDispatcher) {
-                try {
-
-                    connecting = true;
-
-                    ioSocket = IO.socket(BuildConfig.API_URL)
-
-                    ioSocket?.on(deviceId, getMessage)
-
-                    ioSocket?.connect()
-
-                    ioSocket?.emit("add_room_devices")
-
-
-                } catch (e: Exception) {
-                    Log.e("IO sockets exception", e.toString())
-                } finally {
-                    connecting = false;
-                }
+            } catch (e: Exception) {
+                Log.e("IO sockets exception", e.toString())
+            } finally {
+                connecting = false;
             }
         }
 
@@ -166,35 +163,57 @@ class CoordinatesViewModel(private val databaseService: DatabaseService) : ViewM
 
     fun startSocket() {
         if ((ioSocket == null || (ioSocket?.connected() == false)) && !connecting) {
-            connectSocket()
+            viewModelScope.launch {
+                withContext(mainDispatcher){
+                    socketIOConnect()
+                }
+            }
         }
     }
 
 
 
 
-    fun disconnectSocket() {
-        viewModelScope.launch {
-            withContext(mainDispatcher) {
-                ioSocket?.close()
-                ioSocket?.disconnect()
-                ioSocket = null
+
+    private suspend fun socketIODisconnect() {
+
+        withContext(mainDispatcher) {
+            ioSocket?.close()
+            ioSocket?.disconnect()
+            ioSocket = null
+            connecting = false
 
 
 
-                if (coordinates != null) {
-                    val timestamp = parseDate(coordinates!!.date, Locale.getDefault())!!.time
-                    val location = Location(
-                        coordinates!!.latitude, coordinates!!.longitude, timestamp, uUIDToBytes(deviceId!!)
-                    )
-                    databaseService.upsertLocation(location)
-                    Log.i("LOCATION", "Location saved $location")
-                }
-
-
+            if (coordinates != null) {
+                val timestamp = parseDate(coordinates!!.date, Locale.getDefault())!!.time
+                val location = Location(
+                    coordinates!!.latitude, coordinates!!.longitude, timestamp, uUIDToBytes(deviceId!!)
+                )
+                databaseService.upsertLocation(location)
+                Log.i("LOCATION", "Location saved $location")
             }
+
+
         }
 
+    }
+
+    fun disconnect(){
+        viewModelScope.launch {
+            withContext(mainDispatcher){
+                socketIODisconnect()
+            }
+        }
+    }
+
+    fun restart (){
+        viewModelScope.launch {
+            withContext(mainDispatcher){
+                socketIODisconnect()
+                socketIOConnect()
+            }
+        }
     }
 
 

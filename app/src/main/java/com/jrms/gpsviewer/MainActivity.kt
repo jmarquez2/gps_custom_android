@@ -1,7 +1,6 @@
 package com.jrms.gpsviewer
 
 import android.os.Bundle
-import android.util.Log
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
@@ -13,7 +12,6 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.jrms.gpsviewer.data.selectedDevice
 import com.jrms.gpsviewer.databinding.MainActivityBinding
-import com.jrms.gpsviewer.interfaces.OnSocketAction
 
 import com.jrms.gpsviewer.viewmodels.CoordinatesViewModel
 
@@ -23,17 +21,19 @@ import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 
-class MainActivity : AppCompatActivity(), OnSocketAction {
+class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: MainActivityBinding
 
     private val viewModel: CoordinatesViewModel by viewModel()
 
+    private val lifecycleRun  = Lifecycle.State.STARTED
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         if (savedInstanceState != null) {
-            startSocket()
+            viewModel.startSocket()
         }
 
         binding = MainActivityBinding.inflate(layoutInflater)
@@ -57,7 +57,7 @@ class MainActivity : AppCompatActivity(), OnSocketAction {
 
 
         this.lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            repeatOnLifecycle(lifecycleRun) {
                 baseContext?.dataStore?.data?.collect {
                     viewModel.setCoordinatesAndConnect(it[selectedDevice])
                 }
@@ -68,27 +68,14 @@ class MainActivity : AppCompatActivity(), OnSocketAction {
 
     }
 
-    override fun startSocket() {
-        viewModel.startSocket()
-
-    }
-
-    override fun stopSocket() {
-        viewModel.disconnectSocket()
-    }
-
-    override fun restartSocket() {
-        viewModel.disconnectSocket()
-        viewModel.startSocket()
-    }
 
     override fun onRestart() {
         super.onRestart()
-        startSocket()
+        viewModel.restart()
     }
 
     override fun onStop() {
-        viewModel.disconnectSocket()
+        viewModel.disconnect()
         super.onStop()
 
     }

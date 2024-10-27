@@ -27,6 +27,8 @@ class MapsFragment : Fragment() {
 
     private val viewModel: CoordinatesViewModel by activityViewModel()
 
+    private val lifecycleRun  = Lifecycle.State.STARTED
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -47,7 +49,7 @@ class MapsFragment : Fragment() {
 
 
         viewLifecycleOwner.lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            repeatOnLifecycle(lifecycleRun) {
 
                 viewModel.coordinatesState.collect {
 
@@ -83,7 +85,7 @@ class MapsFragment : Fragment() {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            repeatOnLifecycle(lifecycleRun) {
                 activity?.baseContext?.dataStore?.data?.collect {
                     followMarker = it[followDeviceMarkerPreference] ?: true
                 }

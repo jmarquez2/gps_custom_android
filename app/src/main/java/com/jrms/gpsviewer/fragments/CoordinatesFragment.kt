@@ -36,6 +36,8 @@ class CoordinatesFragment : Fragment() {
 
     private val viewModel : CoordinatesViewModel by activityViewModel()
 
+    private val lifecycleRun  = Lifecycle.State.STARTED
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -48,7 +50,7 @@ class CoordinatesFragment : Fragment() {
 
 
         viewLifecycleOwner.lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED){
+            repeatOnLifecycle(lifecycleRun){
                 activity?.baseContext?.dataStore?.data?.collect{
                     binding.followDeviceCheckBox.isChecked = it[followDeviceMarkerPreference] ?: true
                 }
@@ -64,7 +66,7 @@ class CoordinatesFragment : Fragment() {
 
         binding.followDeviceCheckBox.setOnClickListener { c ->
             viewLifecycleOwner.lifecycleScope.launch {
-                repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                repeatOnLifecycle(lifecycleRun) {
                     activity?.baseContext?.dataStore?.edit {
                         it[followDeviceMarkerPreference] = (c as CheckBox).isChecked
                     }
@@ -73,7 +75,7 @@ class CoordinatesFragment : Fragment() {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.RESUMED){
+            repeatOnLifecycle(lifecycleRun){
                 this@CoordinatesFragment.viewModel.coordinatesState.collect{
                     if(it != null){
                         binding.coordinates = it
